@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "search": {
+      "mode": "primary",
+      "prompt": "{file:./prompts/search.txt}"
+    },
+    "codebase_analyze": {
+      "mode": "subagent",
+      "prompt": "{file:./prompts/codebase_analyze.txt}",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  },
+  "mcp": {
+    "perplexity-search": {
+      "type": "local",
+      "command": ["/home/chase/Projects/sandbox/perplexity-mcp/perplexity-mcp"],
+      "enabled": true,
+      "environment": {
+        "PERPLEXITY_API_KEY": {env:PERPLEXITY_API_KEY},
+      }
+    },
+  },
+}
