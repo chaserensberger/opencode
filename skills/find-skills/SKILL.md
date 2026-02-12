@@ -20,14 +20,14 @@ Use this skill when the user:
 
 ## What is the Skills CLI?
 
-The Skills CLI (`bunx skills`) is the package manager for the open agent skills ecosystem. Skills are modular packages that extend agent capabilities with specialized knowledge, workflows, and tools.
+The Skills CLI (`npx skills`) is the package manager for the open agent skills ecosystem. Skills are modular packages that extend agent capabilities with specialized knowledge, workflows, and tools.
 
 **Key commands:**
 
-- `bunx skills find [query]` - Search for skills interactively or by keyword
-- `bunx skills add <package>` - Install a skill from GitHub or other sources
-- `bunx skills check` - Check for skill updates
-- `bunx skills update` - Update all installed skills
+- `npx skills find [query]` - Search for skills interactively or by keyword
+- `npx skills add <package>` - Install a skill from GitHub or other sources
+- `npx skills check` - Check for skill updates
+- `npx skills update` - Update all installed skills
 
 **Browse skills at:** https://skills.sh/
 
@@ -46,19 +46,19 @@ When a user asks for help with something, identify:
 Run the find command with a relevant query:
 
 ```bash
-bunx skills find [query]
+npx skills find [query]
 ```
 
 For example:
 
-- User asks "how do I make my React app faster?" → `bunx skills find react performance`
-- User asks "can you help me with PR reviews?" → `bunx skills find pr review`
-- User asks "I need to create a changelog" → `bunx skills find changelog`
+- User asks "how do I make my React app faster?" → `npx skills find react performance`
+- User asks "can you help me with PR reviews?" → `npx skills find pr review`
+- User asks "I need to create a changelog" → `npx skills find changelog`
 
 The command will return results like:
 
 ```
-Install with bunx skills add <owner/repo@skill>
+Install with npx skills add <owner/repo@skill>
 
 vercel-labs/agent-skills@vercel-react-best-practices
 └ https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices
@@ -79,7 +79,7 @@ I found a skill that might help! The "vercel-react-best-practices" skill provide
 React and Next.js performance optimization guidelines from Vercel Engineering.
 
 To install it:
-bunx skills add vercel-labs/agent-skills@vercel-react-best-practices
+npx skills add vercel-labs/agent-skills@vercel-react-best-practices
 
 Learn more: https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices
 ```
@@ -89,7 +89,7 @@ Learn more: https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practic
 If the user wants to proceed, you can install the skill for them:
 
 ```bash
-bunx skills add <owner/repo@skill> -g -y
+npx skills add <owner/repo@skill> -g -y
 ```
 
 The `-g` flag installs globally (user-level) and `-y` skips confirmation prompts.
@@ -129,5 +129,5 @@ I searched for skills related to "xyz" but didn't find any matches.
 I can still help you with this task directly! Would you like me to proceed?
 
 If this is something you do often, you could create your own skill:
-bunx skills init my-xyz-skill
+npx skills init my-xyz-skill
 ```

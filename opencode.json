@@ -21,8 +21,8 @@
       "command": ["/home/chase/Projects/sandbox/perplexity-mcp/perplexity-mcp"],
       "enabled": true,
       "environment": {
-        "PERPLEXITY_API_KEY": {env:PERPLEXITY_API_KEY},
+        "PERPLEXITY_API_KEY": "{env:PERPLEXITY_API_KEY}"
       }
-    },
-  },
+    }
+  }
 }
