@@ -1,116 +1,190 @@
 ---
 name: wingman
-description: Concise guide for using Wingman (Go SDK + HTTP server) to build agent-powered apps.
+description: Use when building with Wingman, a self-hostable Go agent orchestration engine with SDK and HTTP server modes, provider/model separation, tools, sessions, and fleets.
+license: MIT
+metadata:
+  author: https://github.com/chaserensberger
+  version: "0.5.1"
+  triggers: Wingman, wingman, agent orchestration, Go SDK agents, self-hosted agents, airgapped AI, session tool use, fleet fanout, formations
+  role: specialist
+  scope: implementation
+  output-format: code
 ---
 
-# Wingman Skill
+This skill gives an AI coding agent the minimum context needed to build with Wingman correctly.
 
-Wingman is a Go-based agent orchestration framework. Use the Go SDK for maximum control or the HTTP server for batteries-included persistence and REST access.
+## What Wingman is
 
-## When to Use This Skill
+Wingman is a self-hostable, airgap-friendly agent orchestration engine in Go with two interchangeable usage modes:
 
-Use this skill when you need to:
+1. Go SDK (in-process, caller controls persistence)
+2. HTTP server (`wingman serve`, persisted in SQLite)
 
-- Build apps that run LLM agents with tools, sessions, and provider configs
-- Choose between the Go SDK (embedded) and the HTTP server (service)
-- Wire providers (Anthropic, Ollama, etc.) with typed configs
+Core design goals:
 
-## Quick Start: Go SDK
+- Self-contained runtime (no external provider/model registries required)
+- Works in airgapped environments
+- Provider + model treated as separate first-class fields
+- Composable abstractions: agent -> session -> fleet (formations later)
 
-Install:
+## Repository map
 
-```bash
-go get github.com/chaserensberger/wingman
-```
+Use these packages as canonical boundaries:
 
-Minimal flow:
+- `core/`: shared types + interfaces
+- `agent/`: agent config and options
+- `session/`: agentic loop (blocking + streaming)
+- `fleet/`: concurrent fan-out execution
+- `actor/`: lower-level actor primitives (future formations)
+- `provider/`: provider registry + metadata
+- `provider/anthropic/`, `provider/ollama/`: provider implementations
+- `tool/`: tool interfaces + built-in tools
+- `internal/server/`: HTTP API handlers
+- `internal/storage/`: SQLite storage
+
+## Non-negotiable modeling rules
+
+1. Keep `provider` and `model` as separate fields.
+2. Keep model/options as `map[string]any` (`Options`) and pass through to providers.
+3. Import shared types/interfaces from `core`, not duplicated local structs.
+4. Provider packages must implement `core.Provider` and register via `provider.Register(...)`.
+
+## Agent mental model
+
+An `agent.Agent` is a named configuration bundle:
+
+- instructions (system prompt)
+- provider (`core.Provider`)
+- tools (`[]core.Tool`)
+- optional output JSON schema
+
+Create agents with functional options (`agent.WithInstructions`, `agent.WithProvider`, `agent.WithTools`, etc.).
+
+## Session mental model
+
+A session is conversation state + agent execution context (`work_dir`, message history).
+
+Agentic loop behavior:
+
+1. Append user message
+2. Build `core.InferenceRequest`
+3. Run provider inference
+4. Append assistant response
+5. If `stop_reason == "tool_use"`, execute tool calls, append `tool_result`, and continue
+6. Return final result
+
+Important:
+
+- SDK sessions are in-memory.
+- Server sessions are persisted and reconstructed per request.
+- Tool call ID pairing matters: `tool_result.tool_use_id` must match the prior `tool_use.id`.
+
+## Fleet mental model
+
+`fleet.Fleet` is the primary high-level fan-out primitive:
+
+- one template agent
+- many tasks
+- optional per-task overrides (`message`, `work_dir`, `instructions`, `data`)
+- bounded concurrency via `MaxWorkers` (`0` means unlimited)
+
+Use `Run` for blocking all results, `RunStream` for incremental results.
+
+## Providers
+
+Provider construction options are intentionally provider-specific.
+
+- Factory path: `provider.New(providerID, opts)`
+- Direct path: provider constructor (for example, `anthropic.New(...)`)
+
+Known option keys:
+
+- Anthropic: `model`, `max_tokens`, `temperature`, `api_key`
+- Ollama: `model`, `max_tokens` (mapped), `temperature`, `base_url`
+
+Operational notes:
+
+- Anthropic requires `max_tokens`; provider defaults it to `4096` if absent.
+- Server auth keys come from Wingman SQLite auth storage, not process env vars.
+- SDK path may use env var fallback (for example `ANTHROPIC_API_KEY`).
+
+## Built-in tools
+
+Built-in tool names:
+
+- `bash`
+- `read`
+- `write`
+- `edit`
+- `glob`
+- `grep`
+- `webfetch`
+
+SDK supports custom tools via `core.Tool`; server resolves built-ins by name only.
+
+## HTTP API quick map
+
+- Health: `GET /health`
+- Provider metadata/models/auth: `/provider...`
+- CRUD agents: `/agents`
+- CRUD sessions + run message + stream: `/sessions`
+- CRUD fleets + run + stream: `/fleets`
+
+Conventions:
+
+- JSON request/response bodies
+- Errors as `{ "error": "..." }`
+- Streaming endpoints use SSE and `StreamEvent`-style payloads
+
+## Persistence defaults
+
+- SQLite path: `~/.local/share/wingman/wingman.db`
+- Primary tables: `agents`, `sessions`, `fleets`, `auth`
+
+## Recommended implementation workflow for agents
+
+When adding features:
+
+1. Update `core` first if new shared types/interfaces are needed.
+2. Keep provider integration behind `core.Provider` and registry factory.
+3. Preserve server/SDK parity (same concepts, different runtime wiring).
+4. Add or update examples under `examples/`.
+5. Document behavior changes in `resources/docs/master.md`.
+
+When debugging runtime issues:
+
+1. Verify provider/model/options wiring.
+2. Verify tool definitions are included in inference request.
+3. Verify tool call ID and tool result ID matching.
+4. Verify session history replay/persistence behavior (server mode).
+5. Verify streaming events and stop reason handling.
+
+## Known current limitations
+
+- No formations runtime yet (storage shape exists, runtime is future work).
+- No built-in provider capability database (context windows/features are user-known).
+- Server does not load user-defined custom tools.
+- Session loop has no configurable max-steps ceiling yet.
+
+## Minimal SDK pattern (reference)
 
 ```go
-package main
+p, err := anthropic.New(anthropic.Config{
+    Options: map[string]any{
+        "model":      "claude-sonnet-4-5",
+        "max_tokens": 4096,
+    },
+})
+if err != nil { /* handle */ }
 
-import (
-    "context"
-    "log"
-
-    "wingman/agent"
-    "wingman/provider/anthropic"
-    "wingman/session"
-    "wingman/tool"
+a := agent.New("Coder",
+    agent.WithInstructions("You are a senior Go developer."),
+    agent.WithProvider(p),
+    agent.WithTools(tool.NewBashTool(), tool.NewReadTool(), tool.NewWriteTool()),
 )
 
-func main() {
-    p := anthropic.New(anthropic.Config{Model: "claude-sonnet-4-5"})
-
-    a := agent.New("Assistant",
-        agent.WithInstructions("You are helpful."),
-        agent.WithProvider(p),
-        agent.WithTools(tool.NewBashTool()),
-    )
-
-    s := session.New(session.WithAgent(a))
-    result, err := s.Run(context.Background(), "What OS am I using?")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    log.Println(result.Response)
-}
+s := session.New(session.WithAgent(a))
+result, err := s.Run(ctx, "Write hello.go and run it")
 ```
 
-Notes:
-
-- Providers are typed; each provider has its own `Config`.
-- Tools are first-class (`tool.NewBashTool()`, `tool.NewReadTool()`, etc.).
-- For concurrency, use `actor.NewFleet` (see SDK docs).
-
-## Quick Start: HTTP Server
-
-Start the server:
-
-```bash
-wingman serve
-```
-
-Configure provider auth:
-
-```bash
-curl -X PUT http://localhost:2323/provider/auth \
-  -H "Content-Type: application/json" \
-  -d '{"providers": {"anthropic": {"type": "api_key", "key": "sk-ant-..."}}}'
-```
-
-Create agent, session, and send message:
-
-```bash
-curl -X POST http://localhost:2323/agents \
-  -d '{"name":"Assistant","instructions":"Be helpful","tools":["bash"],"provider":{"id":"anthropic","model":"claude-sonnet-4-5","max_tokens":4096}}'
-
-curl -X POST http://localhost:2323/sessions \
-  -d '{"work_dir":"/tmp"}'
-
-curl -X POST http://localhost:2323/sessions/SESSION_ID/message \
-  -d '{"agent_id":"AGENT_ID","message":"What OS am I on?"}'
-```
-
-Streaming:
-
-```bash
-curl -X POST http://localhost:2323/sessions/SESSION_ID/message/stream \
-  -H "Content-Type: application/json" \
-  -d '{"agent_id":"AGENT_ID","message":"Hello"}'
-```
-
-Events: `text`, `tool_use`, `tool_result`, `done`, `error`.
-
-## References
-
-- Docs index: `resources/docs/introduction.md`
-- SDK details: `resources/docs/sdk.md`
-- Server routes: `resources/docs/server.md`
-- Providers: `resources/docs/providers.md`
-
-## Practical Guidance for Agents
-
-- Prefer SDK when embedding Wingman in a Go app or you need custom storage.
-- Prefer Server when you want persistence + REST access from any language.
-- If the server binary is unavailable, fall back to SDK usage.
+Use this file as the portable, agent-facing quick reference for Wingman.
