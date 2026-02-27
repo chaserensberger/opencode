@@ -81,27 +81,22 @@ export const hexToOklch = tool({
     const g = srgbToLinear(g8 / 255);
     const b = srgbToLinear(b8 / 255);
 
-    // 2. Linear RGB → XYZ (D65)
-    const x = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
-    const y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
-    const z = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
+    // 2. Linear RGB → LMS (direct, no XYZ intermediate)
+    const lms_l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
+    const lms_m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
+    const lms_s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
 
-    // 3. XYZ → LMS (M1)
-    const lms_l = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
-    const lms_m = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
-    const lms_s = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
-
-    // 4. Cube root
+    // 3. Cube root
     const l_ = Math.cbrt(lms_l);
     const m_ = Math.cbrt(lms_m);
     const s_ = Math.cbrt(lms_s);
 
-    // 5. LMS' → OKLab (M2)
+    // 4. LMS' → OKLab (M2)
     const l = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
     const a = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
     const bLab = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
 
-    // 6. OKLab → OKLCH
+    // 5. OKLab → OKLCH
     const c = Math.sqrt(a * a + bLab * bLab);
     let h = (Math.atan2(bLab, a) * 180) / Math.PI;
     if (h < 0) h += 360;
