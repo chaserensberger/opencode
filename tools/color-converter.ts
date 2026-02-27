@@ -4,6 +4,19 @@ function clamp(value: number, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace(/^#/, "");
+  const full =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  const n = parseInt(full, 16);
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+}
+
 function linearToSrgb(c: number): number {
   return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
 }
@@ -62,36 +75,37 @@ export const hexToOklch = tool({
       .describe("The hex color string (e.g. #ff0000 or ff0000)"),
   },
   async execute(args) {
-    const hex = args.hex.replace(/^#/, "");
-    const r = srgbToLinear(parseInt(hex.slice(0, 2), 16) / 255);
-    const g = srgbToLinear(parseInt(hex.slice(2, 4), 16) / 255);
-    const b = srgbToLinear(parseInt(hex.slice(4, 6), 16) / 255);
+    // 1. Hex → linear RGB
+    const [r8, g8, b8] = hexToRgb(args.hex);
+    const r = srgbToLinear(r8 / 255);
+    const g = srgbToLinear(g8 / 255);
+    const b = srgbToLinear(b8 / 255);
 
-    // 1. Linear RGB → LMS
-    const lms_l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
-    const lms_m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
-    const lms_s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
+    // 2. Linear RGB → XYZ (D65)
+    const x = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+    const y = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
+    const z = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
 
-    // 2. LMS → LMS' (cube root)
+    // 3. XYZ → LMS (M1)
+    const lms_l = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
+    const lms_m = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
+    const lms_s = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
+
+    // 4. Cube root
     const l_ = Math.cbrt(lms_l);
     const m_ = Math.cbrt(lms_m);
     const s_ = Math.cbrt(lms_s);
 
-    // 3. LMS' → OKLab (M2)
-    const L = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
+    // 5. LMS' → OKLab (M2)
+    const l = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
     const a = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
     const bLab = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
 
-    // 4. OKLab → OKLCH
-    const C = Math.sqrt(a * a + bLab * bLab);
-    const H = (Math.atan2(bLab, a) * 180) / Math.PI;
-    const hNormalized = H < 0 ? H + 360 : H;
+    // 6. OKLab → OKLCH
+    const c = Math.sqrt(a * a + bLab * bLab);
+    let h = (Math.atan2(bLab, a) * 180) / Math.PI;
+    if (h < 0) h += 360;
 
-    return {
-      l: Math.round(L * 10000) / 10000,
-      c: Math.round(C * 10000) / 10000,
-      h: Math.round(hNormalized * 100) / 100,
-      css: `oklch(${(Math.round(L * 10000) / 10000)} ${(Math.round(C * 10000) / 10000)} ${Math.round(hNormalized * 100) / 100})`,
-    };
+    return `oklch(${l.toFixed(4)} ${c.toFixed(4)} ${h.toFixed(2)})`;
   },
 });
