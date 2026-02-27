@@ -18,7 +18,9 @@
   "mcp": {
     "perplexity-search": {
       "type": "local",
-      "command": ["/home/chase/Projects/sandbox/perplexity-mcp/perplexity-mcp"],
+      "command": [
+        "/home/chase/Projects/wingman/sandbox/perplexity-mcp/perplexity-mcp"
+      ],
       "enabled": true,
       "environment": {
         "PERPLEXITY_API_KEY": "{env:PERPLEXITY_API_KEY}"
