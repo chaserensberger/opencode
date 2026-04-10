@@ -1,15 +1,15 @@
----
-name: wingman
-description: Use when building with Wingman, a self-hostable Go agent orchestration engine with SDK and HTTP server modes, provider/model separation, tools, sessions, and fleets.
-license: MIT
-metadata:
-  author: https://github.com/chaserensberger
-  version: "0.5.1"
-  triggers: Wingman, wingman, agent orchestration, Go SDK agents, self-hosted agents, airgapped AI, session tool use, fleet fanout, formations
-  role: specialist
-  scope: implementation
-  output-format: code
----
+<!-- --- -->
+<!-- name: wingman -->
+<!-- description: Use when building with Wingman, a self-hostable Go agent orchestration engine with SDK and HTTP server modes, provider/model separation, tools, sessions, and fleets. -->
+<!-- license: MIT -->
+<!-- metadata: -->
+<!--   author: https://github.com/chaserensberger -->
+<!--   version: "0.5.1" -->
+<!--   triggers: Wingman, wingman, agent orchestration, Go SDK agents, self-hosted agents, airgapped AI, session tool use, fleet fanout, formations -->
+<!--   role: specialist -->
+<!--   scope: implementation -->
+<!--   output-format: code -->
+<!-- --- -->
 
 This skill gives an AI coding agent the minimum context needed to build with Wingman correctly.
 
