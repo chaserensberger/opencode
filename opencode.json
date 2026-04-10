@@ -1,5 +1,20 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "gemma4-32k": {
+          "name": "gemma4-32k",
+          "tools": true
+        }
+      }
+    }
+  },
   "agent": {
     "search": {
       "mode": "primary",
