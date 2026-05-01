@@ -33,21 +33,11 @@
   "mcp": {
     "perplexity-search": {
       "type": "local",
-      "command": [
-        "/home/chase/Projects/wingman/sandbox/perplexity-mcp/perplexity-mcp"
-      ],
+      "command": ["/home/chase/Projects/perplexity-mcp/perplexity-mcp"],
       "enabled": true,
       "environment": {
         "PERPLEXITY_API_KEY": "{env:PERPLEXITY_API_KEY}"
       }
-    },
-    "v0": {
-      "type": "remote",
-      "url": "https://mcp.v0.dev",
-      "headers": {
-        "Authorization": "Bearer {env:V0_API_KEY}"
-      },
-      "enabled": true
     }
   }
 }
