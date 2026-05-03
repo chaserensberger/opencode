@@ -28,6 +28,17 @@
         "edit": true,
         "bash": true
       }
+    },
+    "builder": {
+      "description": "Assign a well-scoped unit of work (a specific feature, refactor, bug fix, or file/module change) and this agent will plan, implement, and verify it. Provide clear acceptance criteria, relevant file paths, and any constraints. Results should be verified by whatever agent that spawns it.",
+      "mode": "subagent",
+      "model": "opencode-go/kimi-k2.6",
+      "prompt": "{file:./prompts/builder.txt}",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "webfetch": "allow"
+      }
     }
   },
   "mcp": {
