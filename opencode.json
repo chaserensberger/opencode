@@ -49,6 +49,11 @@
       "environment": {
         "PERPLEXITY_API_KEY": "{env:PERPLEXITY_API_KEY}"
       }
+    },
+    "notion": {
+      "type": "remote",
+      "url": "https://mcp.notion.com/mcp",
+      "enabled": true
     }
   }
 }
