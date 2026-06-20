@@ -18,9 +18,9 @@
     }
   },
   "agent": {
-    "search": {
+    "friday": {
       "mode": "primary",
-      "prompt": "{file:./prompts/search.txt}"
+      "prompt": "{file:./prompts/friday.txt}"
     },
     "codebase_analyze": {
       "mode": "subagent",
