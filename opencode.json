@@ -58,11 +58,6 @@
       "type": "remote",
       "url": "https://mcp.render.com/mcp",
       "enabled": true
-    },
-    "browser-use": {
-      "type": "local",
-      "command": ["uvx", "--from", "browser-use[cli]", "browser-use", "--mcp"],
-      "enabled": true
     }
   }
 }
